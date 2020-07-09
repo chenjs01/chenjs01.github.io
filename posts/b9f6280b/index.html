@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="generator" content="Hexo 4.2.0"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>线程基础 - jschen</title><meta description="本文将学习解线程基础知识，线程之间的共享与协作"><meta property="og:type" content="article"><meta property="og:title" content="线程基础"><meta property="og:url" content="http://jschen.cn/posts/b9f6280b/"><meta property="og:site_name" content="jschen"><meta property="og:description" content="本文将学习解线程基础知识，线程之间的共享与协作"><meta property="og:locale" content="zh_CN"><meta property="article:published_time" content="2020-05-26T02:18:00.000Z"><meta property="article:modified_time" content="2020-06-25T14:54:29.842Z"><meta property="article:author" content="jschen"><meta property="article:tag" content="线程"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="http://jschen.cn/img/favicon.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://jschen.cn/posts/b9f6280b/"},"headline":"线程基础","image":["http://jschen.cn/img/jschen.png"],"datePublished":"2020-05-26T02:18:00.000Z","dateModified":"2020-06-25T14:54:29.842Z","author":{"@type":"Person","name":"jschen"},"description":"本文将学习解线程基础知识，线程之间的共享与协作"}</script><link rel="alternative" href="/atom.xml" title="jschen" type="application/atom+xml"><link rel="icon" href="/img/jschen.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro|Monda:300,300italic,400,400italic,700,700italic|Roboto Slab:300,300italic,400,400italic,700,700italic|Microsoft YaHei:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&amp;amp;subset=latin,latin-ext|Inconsolata|Itim|Lobster.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-dark.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" defer></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css"><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script><link rel="stylesheet" href="/css/style.css"><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="/js/globalUtils.js"></script></head><body class="is-3-column has-navbar-fixed-top"><nav class="navbar navbar-main is-fixed-top"><div class="container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/jschen.png" alt="jschen" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">首页</a><a class="navbar-item" href="/archives">归档</a><a class="navbar-item" href="/categories">分类</a><a class="navbar-item" href="/tags">标签</a><a class="navbar-item" href="/media">影音</a><a class="navbar-item" href="/album">相册</a><a class="navbar-item" href="/friend">友链</a><a class="navbar-item" href="/message">留言</a><a class="navbar-item" href="/about">关于</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/chenjs"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a><a class="navbar-item" id="night-nav" title="Night Mode" href="javascript:;"><i class="fas fa-moon" id="night-icon"></i></a></div></div></div></nav><script type="text/javascript" src="/js/theme-setting.js"></script><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-9-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta size-small is-uppercase level is-mobile"><div class="level-left"><time class="level-item" dateTime="2020-05-26T02:18:00.000Z">2020-05-26</time><span class="level-item"><i class="fas fa-folder-open has-text-grey"> </i><a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">java基础知识</a></span><span class="level-item">16 分钟 读完 (大约 2413 个字)</span><span class="level-item" id="busuanzi_container_page_pv"><i class="far fa-eye"></i>&nbsp;&nbsp;<span id="busuanzi_value_page_pv">0</span>次访问</span></div></div><h1 class="title is-3 is-size-4-mobile">线程基础</h1><div class="content"><p>本文将学习解线程基础知识，线程之间的共享与协作</p>
+<a id="more"></a>
+
+<h2 id="一、基础概念"><a href="#一、基础概念" class="headerlink" title="一、基础概念"></a>一、基础概念</h2><br />
+
+<h3 id="什么是进程和线程"><a href="#什么是进程和线程" class="headerlink" title="什么是进程和线程"></a>什么是进程和线程</h3><p>以下为百度百科摘抄的部分简介</p>
+<blockquote>
+<p><a href="https://baike.baidu.com/item/进程">进程（Process）是计算机中的程序关于某数据集合上的一次运行活动，是系统进行资源分配和调度的基本单位，是操作系统结构的基础</a></p>
+</blockquote>
+<blockquote>
+<p><a href="https://baike.baidu.com/item/线程">线程（英语：thread）是操作系统能够进行运算调度的最小单位。它被包含在进程之中，是进程中的实际运作单位</a></p>
+</blockquote>
+<p>进程是暂时的，是程序在数据集上的一次执行，当你运行一个程序,也就跟着启动了一个进程。显然,程序是死的、静态的,进程是活的、动态的。</p>
+<p>进程又分为系统进程和用户进程，可以由用户控制关闭的是用户进程，系统进程不会受到用户干预，如内存分配，进程切换等</p>
+<p>线程是进程的一个实体，是 CPU 调度和分派的基本单位。它不拥有系统资源，但是他会拥有派生它的进程的资源（如程序计数器，寄存器，栈等），可以和同一进程下的其他线程共享线程拥有的全部资源。<br><br /></p>
+<h3 id="CPU核心数和线程数的关系"><a href="#CPU核心数和线程数的关系" class="headerlink" title="CPU核心数和线程数的关系"></a>CPU核心数和线程数的关系</h3><p>多核心，简单理解就是一个芯片多个处理器，每个处理器能并行地执行不同进程<br><br /><br>多线程：让一个处理器上的多个线程同步执行并共享处理器的执行资源。<br>通过增加核心数来增加线程数，正常情况下 核心数:线程数 = 1:1，也就是说四核=4线程，现在的CPU有很多已经支持超线程，如i7，i9，使核心数:线程数 = 1:2<br><br /></p>
+<h3 id="并行和并发"><a href="#并行和并发" class="headerlink" title="并行和并发"></a>并行和并发</h3><p>原则上一个 CPU 只能分配给一个进程,以便运行这个进程。要让它能同时运行多个线程,就必须使用到并发技术。实现并发技术很复杂，最容易理解的是“<a href="https://baike.baidu.com/item/时间片轮转调度算法">时间片轮转调度算法</a>”</p>
+<p>并行：应用能够同时执行不同的任务，比如一条四车道公路能允许四辆车同时并排行走<br>并发：应用能够交替执行不同的任务。如单核心的情况下执行多线程，处理器在我们察觉不到的情况下高速切换两个线程，达到“同时执行”的效果</p>
+<h3 id="高并发编程的意义"><a href="#高并发编程的意义" class="headerlink" title="高并发编程的意义"></a>高并发编程的意义</h3><ol>
+<li>充分利用CPU资源。现在CPU基本都是多核，如果使用单线程那就只用到了CPU一个核心，那就浪费了。</li>
+<li>加快响应时间。比如迅雷可以同时下载多个文件</li>
+<li>可以使我们的代码模块化，异步化，简单化。如电商系统，用户下订单之后发送短信和邮件，就可以做成单独的模块，交给其他线程执行。</li>
+</ol>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><ol>
+<li>线程安全性</li>
+<li>死锁</li>
+<li>线程过多导致宕机<br />
+
+</li>
+</ol>
+<h2 id="二、基本使用"><a href="#二、基本使用" class="headerlink" title="二、基本使用"></a>二、基本使用</h2><br />
+
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><ol>
+<li>X extends Thread，然后X.start()</li>
+<li>implements Runnable，然后交给Thread运行。如new Thread(Runnable).start()</li>
+</ol>
+<p>Thread才是java中对线程的唯一抽象。runnable只是对任务的抽象，并不参与实际执行。</p>
+<h3 id="中止"><a href="#中止" class="headerlink" title="中止"></a>中止</h3><ol>
+<li>自然中止，run方法执行完成或者抛异常导致线程提前结束</li>
+<li>使用suspend()、resume()和stop()，但是这些方法都不建议使用，具体原因可查看文档：<a href="https://docs.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html">《Why Are Thread.stop, Thread.suspend,Thread.resume and Runtime.runFinalizersOnExit Deprecated?》</a></li>
+</ol>
+<h3 id="中断-（安全的中止）"><a href="#中断-（安全的中止）" class="headerlink" title="中断 （安全的中止）"></a>中断 （安全的中止）</h3><p><strong>* 处于死锁状态的线程无法被中断 *</strong></p>
+<p>使用interrupt()通知线程需要中断，设置标志符为true（这里只是通知，并没有强制停止）</p>
+<ol>
+<li>可以通过isinterrupt()判断是否被中断</li>
+<li>或者通过调用静态方法Thread.interrupt()来判断是否中断（这一方法会将标志符设置为false）</li>
+</ol>
+<p>如果一个线程处于阻塞状态（线程调用sleep()、join()、wait()），此时调用方法检查到中断标志符为true时，那么此时会抛出异常，并将标志符清除，重新设置为false</p>
+<p>不建议自定义标志符来中断线程运行（自定义一个变量，在想线程停止时设置为true，然后判断变量为true时停止线程）</p>
+<p>因为在run方法中有阻塞调用时，自定义标识符会检测不到，只有等阻塞调用返回了才能检查到<br><br /></p>
+<h2 id="三、对Java中的线程再多点认识"><a href="#三、对Java中的线程再多点认识" class="headerlink" title="三、对Java中的线程再多点认识"></a>三、对Java中的线程再多点认识</h2><p><img src="http://img.jschen.cn/thread/thread_overview.png" alt="线程概述图"><br><br /></p>
+<h3 id="深入理解run-和start"><a href="#深入理解run-和start" class="headerlink" title="深入理解run()和start()"></a>深入理解run()和start()</h3><p>我们通过执行new Thread，new出一个thread实例，但是此时还没有和系统中真正的线程挂钩，只有执行了start()方法，才算是真正的启动了线程。</p>
+<p>start()方法能让一个线程进入就绪状态等待分配CPU，等分配到了CPU 那么才能实现run方法，如果start方法重复调用则会抛异常。<br /><br>run()方法是业务逻辑实现的地方，和成员方法一样，可多次调用。</p>
+<h3 id="其他的线程方法"><a href="#其他的线程方法" class="headerlink" title="其他的线程方法"></a>其他的线程方法</h3><p>yield()方法：让出当前CPU使用权，但不释放锁资源。</p>
+<p>注意：</p>
+<ol>
+<li>有可能执行yield()方法的线程执行完了，有可能不拥有锁资源了，也可能拥有的锁资源别的线程不需要，所以这里是不会释放锁资源的。</li>
+<li>虽然让出了CPU使用权，但是这个CPU给谁使用是由“<a href="https://baike.baidu.com/item/时间片轮转调度算法">时间片轮转调度算法</a>”决定的，所以CPU又分配给了执行yield()方法的线程</li>
+</ol>
+<p>wait()/notify()/notifyAll():之后再列出来</p>
+<p>join()方法：将两个交替执行的线程变成顺序执行，如B线程调用了A线程的join()方法，那么就要等到A线程执行完了，才能执行B线程。</p>
+<h3 id="线程优先级"><a href="#线程优先级" class="headerlink" title="线程优先级"></a>线程优先级</h3><p>在 Java 线程中，通过一个整型成员变量 priority 来控制优先级，优先级的范围从 1~10，在线程构建的时候可以通过 setPriority(int)方法来修改优先级，默认优先级是 5，优先级高的线程分配时间片的数量要多于优先级低的线程。<br>设置线程优先级时，针对频繁阻塞（休眠或者 I/O 操作）的线程需要设置较高优先级，而偏重计算（需要较多 CPU 时间或者偏运算）的线程则设置较低的优先级，确保处理器不会被独占。<code>在不同的 JVM 以及操作系统上，线程规划会存在差异，有些操作系统甚至会忽略对线程优先级的设定。</code></p>
+<h3 id="守护线程-Daemon"><a href="#守护线程-Daemon" class="headerlink" title="守护线程 Daemon"></a>守护线程 Daemon</h3><p>Daemon（守护）线程是一种支持型线程，因为它主要被用作程序中后台调<br>度以及支持性工作。可以通过调用 Thread.setDaemon(true)将线程设置为 Daemon 线程，当主进程结束后守护进程也会跟着结束（我们一般用不上，比如垃圾回收线程就是 Daemon 线程。）</p>
+<p>Daemon 线程被用作完成支持性工作，但是在 Java 虚拟机退出时 Daemon 线程中的 finally 块并不一定会执行(因为分配给线程的时间由时间片轮转调度决定)。在构建 Daemon 线程时，不能依靠 finally 块中的内容来确保执行关闭或清理资源的逻辑。（非守护进程的finally会被正常执行）</p>
+<h3 id="线程间的共享和协作"><a href="#线程间的共享和协作" class="headerlink" title="线程间的共享和协作"></a>线程间的共享和协作</h3><p>synchronize内置锁(针对对象)</p>
+<p>Java 支持多个线程同时访问一个对象或者对象的成员变量。<br /><br>关键字synchronized 可以修饰方法或者以同步块的形式来进行使用，它主要确保多个线程在同一个时刻，只能有一个线程处于方法或者同步块中，它保证了线程对变量访问的可见性和排他性，又称为内置锁机制。</p>
+<p>对象锁和类锁：</p>
+<p>对象锁是用于对象实例方法，或者一个对象实例上的；<br />类锁是用于类的静态方法或者一个类的 class 对象上的。</p>
+<p>我们知道，类的对象实例可以有很多个，但是每个类只有一个 class 对象，所以不同对象实例的对象锁是互不干扰的，但是每个类只有一个类锁。<br>但是有一点必须注意的是，其实类锁只是一个概念上的东西，并不是真实存在的，类锁其实锁的是每个类的对应的 class 对象。类锁和对象锁之间也是互不干扰的。</p>
+</div><div class="article-tags size-small is-uppercase mb-4"><i class="fas fa-tags has-text-grey"></i> <a class="link-muted mr-2" rel="tag" href="/tags/%E7%BA%BF%E7%A8%8B/">线程</a><p class="text-right font1_1"><time datetime="2020-06-25T14:54:29.842Z"><strong><em> 本文最后修改于: 2020-06-25.</em></strong></time></p></div><ul class="post-copyright"><li><strong>本文标题：</strong><a href="http://jschen.cn/posts/b9f6280b/">线程基础</a></li><li><strong>本文作者：</strong><a href="http://jschen.cn">jschen</a></li><li><strong>本文链接：</strong><a href="http://jschen.cn/posts/b9f6280b/">http://jschen.cn/posts/b9f6280b/</a></li><li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！</li></ul><div class="recommend-post"><span class="is-size-6 has-text-grey has-mr-7"># 推荐文章</span><br></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css"><div class="social-share"></div><script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button is-success donate"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="http://img.jschen.cn/pay/wechat.png" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/posts/1f66094b/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">JVM整体结构</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/posts/f876582f/"><span class="level-item">Welcome</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><div class="content" id="valine-thread"></div><script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js"></script><script>new Valine({
+            el: '#valine-thread' ,
+            notify: false,
+            verify: false,
+            appId: 'Pi95My6R229lumiW7waxe4wW-gzGzoHsz',
+            appKey: 'bNe1shnuQRsQAfg2cQl4Ql0k',
+            placeholder: '欢迎给本站留下你的个人建议',
+            avatar: 'mp',
+            avatarForce: false,
+            meta: ["nick","mail","link"],
+            pageSize: 10,
+            visitor: false,
+            highlight: true,
+            recordIP: false
+        });</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1 is-sticky"><div class="card widget toc-scroll" id="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="is-flex" id="toc-item-一、基础概念" href="#一、基础概念"><span>一、基础概念</span></a><ul class="menu-list"><li><a class="is-flex" id="toc-item-什么是进程和线程" href="#什么是进程和线程"><span>什么是进程和线程</span></a></li><li><a class="is-flex" id="toc-item-CPU核心数和线程数的关系" href="#CPU核心数和线程数的关系"><span>CPU核心数和线程数的关系</span></a></li><li><a class="is-flex" id="toc-item-并行和并发" href="#并行和并发"><span>并行和并发</span></a></li><li><a class="is-flex" id="toc-item-高并发编程的意义" href="#高并发编程的意义"><span>高并发编程的意义</span></a></li><li><a class="is-flex" id="toc-item-注意事项" href="#注意事项"><span>注意事项</span></a></li></ul></li><li><a class="is-flex" id="toc-item-二、基本使用" href="#二、基本使用"><span>二、基本使用</span></a><ul class="menu-list"><li><a class="is-flex" id="toc-item-启动" href="#启动"><span>启动</span></a></li><li><a class="is-flex" id="toc-item-中止" href="#中止"><span>中止</span></a></li><li><a class="is-flex" id="toc-item-中断-（安全的中止）" href="#中断-（安全的中止）"><span>中断 （安全的中止）</span></a></li></ul></li><li><a class="is-flex" id="toc-item-三、对Java中的线程再多点认识" href="#三、对Java中的线程再多点认识"><span>三、对Java中的线程再多点认识</span></a><ul class="menu-list"><li><a class="is-flex" id="toc-item-深入理解run-和start" href="#深入理解run-和start"><span>深入理解run()和start()</span></a></li><li><a class="is-flex" id="toc-item-其他的线程方法" href="#其他的线程方法"><span>其他的线程方法</span></a></li><li><a class="is-flex" id="toc-item-线程优先级" href="#线程优先级"><span>线程优先级</span></a></li><li><a class="is-flex" id="toc-item-守护线程-Daemon" href="#守护线程-Daemon"><span>守护线程 Daemon</span></a></li><li><a class="is-flex" id="toc-item-线程间的共享和协作" href="#线程间的共享和协作"><span>线程间的共享和协作</span></a></li></ul></li></ul></div></div><script type="text/javascript" async>
+        $(document).ready(function () { //参考自 https://github.com/ppoffice/hexo-theme-icarus/pull/616/files
+            var observerTopMargin;
+            var scrollObserver;
+            var headerElems = $(".headerlink");
+            var activeTocItem;
+        
+            function initIntersectionObserver(docHeight) {
+                observerTopMargin = docHeight;
+                scrollObserver = new IntersectionObserver(scrollCallBack,
+                    {
+                        root: null,  // viewpoint
+                        rootMargin: docHeight + "px 0px -80% 0px"  // cover top 30% of viewport to the top of document
+                    })
+            }
+        
+            function scrollCallBack(entries, observer) {
+                if ($(window).scrollTop() > observerTopMargin * 0.7) { 
+                    // User somehow scroll to 70% of observerTopMargin (which is inited as 200% document height)
+                    // Observer top margin need to extend to cover all the space to the top of the document
+                    initIntersectionObserver(observerTopMargin * 2)
+                    observer.disconnect();
+                    return;
+                }
+                let toActive;
+                if (entries[0].intersectionRatio == 1) {  // enter viewed area
+                    let entry = entries.reduce((u, v) => (u.target.toc_id > v.target.toc_id ? u : v));  // get the lowest item
+                    toActive = $("#toc-item-" + $(entry.target).attr("href").substr(1));
+                } else {
+                    let entry = entries.reduce((u, v) => (u.target.toc_id < v.target.toc_id ? u : v));  // get the highest item
+                    let idx = Math.max(entry.target.toc_id - 1, 0);
+                    toActive = $("#toc-item-" + $(headerElems[idx]).attr("href").substr(1));
+                }
+                if (activeTocItem) activeTocItem.removeClass("is-current");
+                activeTocItem = toActive
+                activeTocItem.addClass("is-current");
+            }
+        
+            initIntersectionObserver($(document).height() * 2);
+            headerElems.each(function (index, obj) {
+                obj.toc_id = index;
+                scrollObserver.observe(obj);
+            })
+        });</script></div><div class="card widget"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="is-rounded" src="/img/favicon.png" alt="jschen"></figure><p class="title is-size-4 is-block line-height-inherit">jschen</p><p class="is-size-6 is-block">当时年少春衫薄</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>GuangDong</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">7</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">3</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">2</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="http://jschen.cn" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile"><a class="level-item button is-transparent is-white is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/chenjs01"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-white is-marginless" target="_blank" rel="noopener" title="RSS" href="/atom.xml"><i class="fas fa-rss"></i></a></div><div><hr><p id="hitokoto">:D 一言句子获取中...</p><script type="text/javascript" defer>function getYiyan(){
+                                $.getJSON("https://v1.hitokoto.cn/", function (data) {
+                                if(data){
+                                    $('#hitokoto').html("");
+                                    $('#hitokoto').append("<strong style='color: #3273dc;'>"+data.hitokoto+"</strong>"+
+                                    "<p>"+"来源《"+data.from+"》</p><p>提供者-"+data.creator+"</p>");
+                                }});}
+                                $(function (){getYiyan();$('#hitokoto').click(function(){getYiyan();})});</script></div></div></div><!--!--><div class="card widget"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content size-small"><p><time dateTime="2020-07-07T13:30:00.000Z">2020-07-07</time></p><p class="title is-6"><a class="link-muted" href="/posts/2beaa71e/">执行子程序</a></p><p class="is-uppercase"><i class="fas fa-folder-open has-text-grey"> </i><a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">java基础知识</a> / <a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/JVM%E7%9B%B8%E5%85%B3/">JVM相关</a></p></div></article><article class="media"><a class="media-left" href="/posts/57e6489d/"><p class="image is-64x64"><img class="thumbnail" src="http://img.jschen.cn/JVM/summary.png" alt="JVM总结篇"></p></a><div class="media-content size-small"><p><time dateTime="2020-06-30T01:06:00.000Z">2020-06-30</time></p><p class="title is-6"><a class="link-muted" href="/posts/57e6489d/">JVM总结篇</a></p><p class="is-uppercase"><i class="fas fa-folder-open has-text-grey"> </i><a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">java基础知识</a></p></div></article><article class="media"><div class="media-content size-small"><p><time dateTime="2020-06-27T14:00:00.000Z">2020-06-27</time></p><p class="title is-6"><a class="link-muted" href="/posts/5f991803/">垃圾回收</a></p><p class="is-uppercase"><i class="fas fa-folder-open has-text-grey"> </i><a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">java基础知识</a> / <a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/JVM%E7%9B%B8%E5%85%B3/">JVM相关</a></p></div></article><article class="media"><div class="media-content size-small"><p><time dateTime="2020-06-16T15:29:00.000Z">2020-06-16</time></p><p class="title is-6"><a class="link-muted" href="/posts/2f70e593/">虚拟机中的对象</a></p><p class="is-uppercase"><i class="fas fa-folder-open has-text-grey"> </i><a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">java基础知识</a> / <a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/JVM%E7%9B%B8%E5%85%B3/">JVM相关</a></p></div></article><article class="media"><div class="media-content size-small"><p><time dateTime="2020-06-11T06:55:00.000Z">2020-06-11</time></p><p class="title is-6"><a class="link-muted" href="/posts/1f66094b/">JVM整体结构</a></p><p class="is-uppercase"><i class="fas fa-folder-open has-text-grey"> </i><a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">java基础知识</a> / <a class="link-muted" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/JVM%E7%9B%B8%E5%85%B3/">JVM相关</a></p></div></article></div></div><div class="card widget"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile is-marginless" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/"><span class="level-start"><span class="level-item">java基础知识</span></span><span class="level-end"><span class="level-item tag">6</span></span></a><ul class="mr-0"><li><a class="level is-mobile is-marginless" href="/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/JVM%E7%9B%B8%E5%85%B3/"><span class="level-start"><span class="level-item">JVM相关</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li></ul></li><li><a class="level is-mobile is-marginless" href="/categories/%E6%9D%82%E8%B0%88/"><span class="level-start"><span class="level-item">杂谈</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile is-marginless" href="/archives/2020/07/"><span class="level-start"><span class="level-item">七月 2020</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile is-marginless" href="/archives/2020/06/"><span class="level-start"><span class="level-item">六月 2020</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile is-marginless" href="/archives/2020/05/"><span class="level-start"><span class="level-item">五月 2020</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li></ul></div></div></div><div class="card widget"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/JVM/"><span class="tag">JVM</span><span class="tag is-grey-lightest">5</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BA%BF%E7%A8%8B/"><span class="tag">线程</span><span class="tag is-grey-lightest">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/jschen.png" alt="jschen" height="28"></a><p class="size-small"><span>&copy; 2020 jschen</span>  Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>,Modify by <a href="https://github.com/removeif" target="_blank">removeif</a> <br>© 版权说明：[本网站所有内容均收集于互联网或自己创作,<br>    方便于网友与自己学习交流，如有侵权，请<a href="/message" target="_blank">留言</a>，立即处理]<br><script type="text/javascript" src="/js/statistics.js"></script><span id="statistic-times">网站运行时间统计加载中...</span><br><div class="size-small"><span id="busuanzi_container_site_uv">❤️感谢<strong> <span id="busuanzi_value_site_uv">99+</span> </strong></span>小伙伴的<strong> <span id="busuanzi_value_site_pv">99+</span> </strong>次光临，查看💐<a href="https://github.com/removeif/hexo-theme-amazing" target="_blank">主题源码</a>！❤️</div></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/removeif"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            site: {
+                url: 'http://jschen.cn',
+                external_link: {"enable":true,"exclude":[]}
+            },
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back-to-top.js" defer></script><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script><script src="/js/gallery.js" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><link rel="stylesheet" href="/css/insight.css"><div class="searchbox ins-search"><div class="searchbox-container ins-search-container"><div class="searchbox-input-wrapper"><input class="searchbox-input ins-search-input" type="text" placeholder="想要查找什么..."><span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span></div><div class="searchbox-result-wrapper ins-section-wrapper"><div class="ins-section-container"></div></div></div></div><script>(function (window) {
+            var INSIGHT_CONFIG = {
+                TRANSLATION: {
+                    POSTS: '文章',
+                    PAGES: '页面',
+                    CATEGORIES: '分类',
+                    TAGS: '标签',
+                    UNTITLED: '(无标题)',
+                },
+                CONTENT_URL: '/content.json',
+            };
+            window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+        })(window);</script><script src="/js/insight.js" defer></script></body></html>
