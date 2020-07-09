@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://jschen.cn/"/>
-  <updated>2020-07-07T13:03:18.283Z</updated>
+  <updated>2020-07-08T14:55:45.713Z</updated>
   <id>http://jschen.cn/</id>
   
   <author>
@@ -15,6 +15,31 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>JVM调优</title>
+    <link href="http://jschen.cn/posts/1653795f/"/>
+    <id>http://jschen.cn/posts/1653795f/</id>
+    <published>2020-07-08T01:29:00.000Z</published>
+    <updated>2020-07-08T14:55:45.713Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文为JVM基础知识的第四篇文章。本文将主要学习JVM 调优</p><a id="more"></a><h1 id="一、内存泄漏和溢出"><a href="#一、内存泄漏和溢出" class="headerlink" title="一、内存泄漏和溢出"></a>一、内存泄漏和溢出</h1><h2 id="1-内存溢出"><a href="#1-内存溢出" class="headerlink" title="1.内存溢出"></a>1.内存溢出</h2><p>内存溢出的原因：程序在申请内存时，没有足够的内存空间</p><p>内存溢出的几种方式：</p><ol><li>栈溢出（如死递归方法循环调用，比如A方法调用A方法，报错StackOverflowError；如不断建立线程，一个线程2M，5000个线程就i需要10G，但我内存又没有10G，就会报错OOM）</li><li>堆溢出（如堆内存为30M，但是我需要创建一个100M的对象，就产生了OOM:Java heap space；不断创建对象，产生OOM: GC overhead limit exceeded,这种情况就是垃圾回收(线程)占用了超过98%的资源，但是回收效率不足2%）</li><li>方法区溢出（在经常动态生产大量 Class 的应用中，大量jsp(jsp第一次运行时需要编译成java类)、基于osgi的应用(同一个类，被不同加载器加载时会被设置成不同的类)）</li><li>本机内存直接溢出（分配的本地内存大小超过了JVM的限制，假设设置-XX:MaxDirectMemorySize=100m，然后通过ByteBuffer分配128M的直接内存，此时就会产生OOM: Direct buffer memory）</li></ol><h2 id="2-内存泄漏"><a href="#2-内存泄漏" class="headerlink" title="2.内存泄漏"></a>2.内存泄漏</h2><p>内存泄漏的原因：程序在申请内存后，比如一个对象，你使用完后觉得它没有用了，应该被释放掉，但是它被引用或者其他情况导致GC无法回收，一直存在，一直占用这一部分空间。</p><p>内存泄漏的几种原因：</p><ol><li>长生命周期的对象持有短生命周期对象的引用（比如我将 ArrayList 设置为静态变量，那么就算我没使用到这个ArrayList，但是在程序结束之前它都不能被释放，这就造成了内存泄漏）</li><li>连接未关闭（如数据库连接、网络连接和 IO 连接等，只有连接被关闭后，垃圾回收器才会回收对应的对象）</li><li>变量作用域不合理（一个变量定义的作用范围大于其使用范围；如果没有及时地把对象设置为 null）</li><li>内部类持有外部类<br>（Java 的非静态内部类的这种创建方式，会隐式地持有外部类的引用，而且默认情况下这个引用是强引用，因此，如果内部类的生命周期长于外部类的生命周期，程序很容易就产生内存泄漏。（你认为垃圾回收器会回收掉外部类的实例，但由于内部类持有外部类的引用，导致垃圾回收器不能正常工作）<br>解决方法：你可以在内部类的内部显示持有一个外部类的软引用(或弱引用)，并通过构造方法的方式传递进来，在内部类的使用过程中，先判断一下外部类是否被回收）</li><li>Hash值改变（比如在集合中，如果修改了对象中的那些参与计算哈希值的字段，会导致无法从集合中单独删除当前对象，造成内存泄露）</li></ol><h2 id="内存泄漏和内存溢出辨析"><a href="#内存泄漏和内存溢出辨析" class="headerlink" title="内存泄漏和内存溢出辨析"></a>内存泄漏和内存溢出辨析</h2><ul><li><p>相同与不同：<br>内存溢出：实实在在的内存空间不足导致；<br>内存泄漏：该释放的对象没有释放，多见于自己使用容器保存元素的情况下。</p></li><li><p>如何避免：<br>内存溢出：检查代码以及设置足够的空间<br>内存泄漏：一定是代码有问题</p></li></ul><p>往往很多情况下，内存溢出往往是内存泄漏造成的。</p><h1 id="二、了解-MAT"><a href="#二、了解-MAT" class="headerlink" title="二、了解 MAT"></a>二、了解 MAT</h1><h2 id="浅堆和深堆"><a href="#浅堆和深堆" class="headerlink" title="浅堆和深堆"></a>浅堆和深堆</h2><p>浅堆：（Shallow Heap）是指一个对象所消耗的内存。例如，在32位系统中，一个对象引用会占据4个字节，一个int类型会占据4个字节，long型变量会占据8个字节，每个对象头需要占用8个字节。<br>深堆 ：这个对象被GC回收后，可以真实释放的内存大小，也就是只能通过对象被直接或间接访问到的所有对象的集合。通俗地说，就是指仅被对象所持有的对象的集合。深堆是指对象的保留集中所有的对象的浅堆大小之和。<br>举例：对象A引用了C和D，对象B引用了E。那么对象A的浅堆大小只是A本身，而如果A被回收，那么C和D都会被回收(可达性分析算法)，所以A的深堆大小为 A+C+D 之和，同时由于对象E还可以通过对象B访问到，因此不在对象A的深堆范围内。</p><h1 id="三、JDK-为我们提供的工具"><a href="#三、JDK-为我们提供的工具" class="headerlink" title="三、JDK 为我们提供的工具"></a>三、JDK 为我们提供的工具</h1><h2 id="命令行工具"><a href="#命令行工具" class="headerlink" title="命令行工具"></a>命令行工具</h2><h3 id="jps"><a href="#jps" class="headerlink" title="jps"></a>jps</h3><p>列出当前机器上正在运行的虚拟机进程，JPS 从操作系统的临时目录上去找。<br>-q：仅仅显示进程，<br>-m：输出主函数传入的参数 .下的 hello 就是在执行程序时从命令行输入的参数<br>-l：输出应用程序主类完整 package 名称或 jar 完整名称.<br>-v: 列出 jvm 参数, -Xms20m -Xmx50m 是启动程序指定的 jvm 参数</p><h3 id="jstat"><a href="#jstat" class="headerlink" title="jstat"></a>jstat</h3><p>用于监视虚拟机各种运行状态信息的命令行工具。它可以显示本地或者远程虚拟机进程中的类装载、内存、垃圾收集、JIT编译等运行数据，在没有GUI图形界面，只提供了纯文本控制台环境的服务器上，它将是运行期定位虚拟机性能问题的首选工具。<br>假设需要每 250 毫秒查询一次进程 13616 垃圾收集状况，一共查询 10 次，那命令应当是：jstat-gc 13616 250 10<br>常用参数：<br>-class (类加载器)<br>-compiler (JIT)<br>-gc (GC 堆状态)<br>-gccapacity (各区大小)<br>-gccause (最近一次 GC 统计和原因)<br>-gcnew (新区统计)<br>-gcnewcapacity (新区大小)<br>-gcold (老区统计)<br>-gcoldcapacity (老区大小)<br>-gcpermcapacity (永久区大小)<br>-gcutil (GC 统计汇总)<br>-printcompilation (HotSpot 编译统计)</p><h3 id="jinfo"><a href="#jinfo" class="headerlink" title="jinfo"></a>jinfo</h3><p>查看和修改虚拟机的参数<br>jinfo –sysprops 可以查看由 System.getProperties()取得的参数<br>jinfo –flag 未被显式指定的参数的系统默认值<br>jinfo –flags（注意 s）显示虚拟机的参数<br>jinfo –flag +[ 参 数 ]可以增加参数，但是仅限于由java -XX:+PrintFlagsFinal –version查询出来且为 manageable 的参数<br>jinfo –flag -[参数] 可以去除参数<br>Thread.getAllStackTraces();</p><h3 id="jmap"><a href="#jmap" class="headerlink" title="jmap"></a>jmap</h3><p>用于生成堆转储快照（一般称为 heapdump 或 dump 文件）。jmap 的作用并不仅仅是为了获取 dump 文件，它还可以查询 finalize 执行队列、Java 堆和永<br>久代的详细信息，如空间使用率、当前用的是哪种收集器等。和 jinfo 命令一样，jmap 有不少功能在 Windows 平台下都是受限的，除了生成 dump 文件的<br>-dump 选项和用于查看每个类的实例、空间占用统计的-histo 选项在所有操作系统都提供之外，其余选项都只能在 Linux/Solaris 下使用。<br>jmap -dump:live,format=b,file=heap.bin <pid><br>Sun JDK 提供 jhat（JVM Heap Analysis Tool）命令与 jmap 搭配使用，来分析 jmap 生成的堆转储快照。</p><h3 id="jhat"><a href="#jhat" class="headerlink" title="jhat"></a>jhat</h3><p>jhat dump 文件名<br>后屏幕显示“Server is ready.”的提示后，用户在浏览器中键入 <a href="http://localhost：7000/就可以访问详情">http://localhost：7000/就可以访问详情</a><br>使用 jhat 可以在服务器上生成堆转储文件分析（一般不推荐，毕竟占用服务器的资源，比如一个文件就有 1 个 G）</p><h3 id="jstack"><a href="#jstack" class="headerlink" title="jstack"></a>jstack</h3><p>（Stack Trace for Java）命令用于生成虚拟机当前时刻的线程快照。线程快照就是当前虚拟机内每一条线程正在执行的方法堆栈的集合，生成线程快照的主<br>要目的是定位线程出现长时间停顿的原因，如线程间死锁、死循环、请求外部资源导致的长时间等待等都是导致线程长时间停顿的常见原因。<br>在代码中可以用 java.lang.Thread 类的 getAllStackTraces（）方法用于获取虚拟机中所有线程的 StackTraceElement 对象。使用这个方法可以通过简单的几行<br>代码就完成 jstack 的大部分功能，在实际项目中不妨调用这个方法做个管理员页面，可以随时使用浏览器来查看线程堆栈。</p><h2 id="可视化工具"><a href="#可视化工具" class="headerlink" title="可视化工具"></a>可视化工具</h2><p>JMX（Java Management Extensions，即 Java 管理扩展）是一个为应用程序、设备、系统等植入管理功能的框架。JMX 可以跨越一系列异构操作系统平台、<br>系统体系结构和网络传输协议，灵活的开发无缝集成的系统、网络和服务管理应用。<br>管理远程进程需要在远程程序的启动参数中增加：<br>-Djava.rmi.server.hostname=….. -Dcom.sun.management.jmxremote<br>-Dcom.sun.management.jmxremote.port=8888<br>-Dcom.sun.management.jmxremote.authenticate=false<br>-Dcom.sun.management.jmxremote.ssl=false</p><h3 id="Jconsole"><a href="#Jconsole" class="headerlink" title="Jconsole"></a>Jconsole</h3><h3 id="visualvm"><a href="#visualvm" class="headerlink" title="visualvm"></a>visualvm</h3><p>插件中心地址<br><a href="https://visualvm.github.io">https://visualvm.github.io</a><br>但是注意版本问题，不同的 JDK 所带的 visualvm 是不一样的，下载插件时需要下对应的版本。<br>一般来说，这个工具是本机调试用，一般生产上来说，你一般是用不了的（除非启用远程连接）</p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文为JVM基础知识的第四篇文章。本文将主要学习JVM 调优&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="java基础知识" scheme="http://jschen.cn/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/"/>
+    
+      <category term="JVM相关" scheme="http://jschen.cn/categories/java%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/JVM%E7%9B%B8%E5%85%B3/"/>
+    
+    
+      <category term="JVM" scheme="http://jschen.cn/tags/JVM/"/>
+    
+  </entry>
   
   <entry>
     <title>执行子程序</title>
@@ -167,7 +192,7 @@
     <link href="http://jschen.cn/posts/f876582f/"/>
     <id>http://jschen.cn/posts/f876582f/</id>
     <published>2020-05-04T15:30:00.000Z</published>
-    <updated>2020-05-23T03:34:22.533Z</updated>
+    <updated>2020-07-09T01:27:53.322Z</updated>
     
     <content type="html"><![CDATA[<p>欢迎来到我的博客 , 感谢你从茫茫人海中发现了这里!</p>]]></content>
     
